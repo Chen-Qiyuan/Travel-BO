@@ -55,5 +55,5 @@ If your runtime is ever terminated unexpectedly and is unfinished, just reload t
 
 ## Running Locally
 
-If you want to edit our code or run it locally, please follow the [Instructions for Running Locally](Instructions_for_Running_Locally.txt)
+If you want to edit our code or run it locally, please follow the [Instructions for Running Locally](Instructions_for_Running_Locally.txt).
 
