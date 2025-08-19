@@ -14,11 +14,9 @@ pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 botorch==0.13.0 c
 
 Repository Structure:
 - `main/`: Contains the code for experiments in the main paper. Inside, subfolders are organized by test function (e.g., `main/Griewank/`).
-- `.../Figures/`: This folder is where all generated plots will be stored.
 - `plot.ipynb`: Jupyter Notebook used to generate plots from experimental data.
-- `.../TEST_FUNCTION/METHOD.py`: Experiment of running algorithm `METHOD` on `TEST_FUNCTION`.
-- `requirements.txt`: A list of all Python package dependencies.
+- `main/TEST_FUNCTION/METHOD.py`: Experiment of running algorithm `METHOD` on `TEST_FUNCTION`.
 
-How to Reproduce Our Results?
+How to Run Our Code?
 
-Shortcut to Reproduce Main Paper Figures (Figures 4-8): Please run the corresponding main/TEST_FUNCTION/figure.py. This will automatically run all the benchmark methods under the folder and create the plots.
+One shortcut to reproduce the main paper figures (Figures 4-8): Please run the corresponding main/TEST_FUNCTION/figure.py. This will automatically run all the benchmark methods under the folder and create the plots.
