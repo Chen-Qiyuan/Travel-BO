@@ -21,7 +21,7 @@ Repository Structure:
 
 How to Reproduce Our Results?
 
-** Shortcut to Reproduce Main Paper Figures (Figures 4-9): Please read the README.md file under this repository. 
+** Shortcut to Reproduce Main Paper Figures (Figures 4-8): Please run the corresponding /TEST_FUNCTION/figure.py. 
 
 The process for reproducing custom figures is a two-step workflow:
 1. Run Experiment Scripts: For a specific experiment, navigate to the corresponding folder and execute the relevant Python (`.py`) scripts. Each benchmark method is implemented in a `.py` file within the test function's folder (e.g., `main/Griewank/TUCB.py`). Running a script produces two outputs: `METHOD_reg.xlsx` for regret data and `METHOD_travel.xlsx` for movement cost data.
