@@ -14,7 +14,6 @@ pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 botorch==0.13.0 c
 
 Repository Structure:
 - `main/`: Contains the code and results for experiments in the main paper. Inside, subfolders are organized by test function (e.g., `main/Griewank/`).
-- `noiseless/`: Contains the code for experiments in the supplementary material (Figures 1-5). The file naming and structure are the same as in the `main` folder.
 - `.../Figures/`: This folder is where all generated plots will be stored.
 - `plot.ipynb`: Jupyter Notebook used to generate plots from experimental data.
 - `.../TEST_FUNCTION/METHOD.py`: Experiment of running algorithm `METHOD` on `TEST_FUNCTION`.
