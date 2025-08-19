@@ -21,20 +21,4 @@ Repository Structure:
 
 How to Reproduce Our Results?
 
-** Shortcut to Reproduce Main Paper Figures (Figures 4-8): Please run the corresponding /TEST_FUNCTION/figure.py. 
-
-The process for reproducing custom figures is a two-step workflow:
-1. Run Experiment Scripts: For a specific experiment, navigate to the corresponding folder and execute the relevant Python (`.py`) scripts. Each benchmark method is implemented in a `.py` file within the test function's folder (e.g., `main/Griewank/TUCB.py`). Running a script produces two outputs: `METHOD_reg.xlsx` for regret data and `METHOD_travel.xlsx` for movement cost data.
-2. Generate Plots: Once the `.xlsx` files are generated, run the `plot.ipynb` Jupyter Notebook to process the `.xlsx` files and create the final plots (`.pdf`).
-
-Supplementary Material Figures
-
-Figures 1-5 (Noiseless Experiments):
-To reproduce these figures, switch to NOISE_SE = 0 for all the codes under `main/TEST_FUNCTION/`. 
-
-Figures 6-11 (TUCB with different batch size schedules):
-To reproduce these figures, navigate to the `main/TEST_FUNCTION/` folder and run the following scripts:
-python TUCB.py
-python TUCB15.py
-python TUCB2.py
-After running the scripts, use the `main/plot.ipynb` notebook to generate the final plots.
+Shortcut to Reproduce Main Paper Figures (Figures 4-8): Please run the corresponding main/TEST_FUNCTION/figure.py. This will automatically run all the benchmark methods under the folder and create the plots.
