@@ -1,5 +1,3 @@
-### Reproducing Figures from Our Paper
-
 This repository provides Jupyter notebooks and instructions for easily reproducing the figures from our paper using Google Colab. To reproduce a figure, click the link below and download the file:
 
 * [Figure 4](Griewank.ipynb)
