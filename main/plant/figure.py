@@ -56,7 +56,7 @@ def plot_from_files():
         cumulative_regret = df.cumsum()
         t = cumulative_regret.index + 1
         average_regret = cumulative_regret.div(t, axis=0)
-        mean = average_regret.mean(axis=1)
+        mean = 2.95 - average_regret.mean(axis=1)
         std = average_regret.std(axis=1) / np.sqrt(10)
         
         # Extract name and plot with the 'label' keyword
@@ -136,4 +136,5 @@ for alg in algorithms:
         print(f"Warning: Script not found at {script_path}")
 
     plot_from_files()
+
 print("Simulations finished.")
