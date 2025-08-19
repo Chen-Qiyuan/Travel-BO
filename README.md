@@ -19,7 +19,7 @@ First, you'll need to upload the downloaded `.ipynb` file to Google Colab.
 
 ![Upload a notebook to Google Colab](docs/Upload2Colab.jpg)
 
-Because some of the competing methods require significant memory, please switch your runtime to **High-RAM** to avoid memory errors. While this feature is typically available with a Colab Pro subscription, it is **free for all users with an `.edu` email account**.
+Because some of the competing methods require significant memory, please switch your runtime to **High-RAM** to avoid memory errors. While this feature is typically available with a Colab Pro subscription, Colab Pro is **free for all users with an `.edu` email account**. If you are an edu user but don't have a Colab Pro account, please make sure to [signup](https://colab.research.google.com/signup). 
 
 ![How to get High-RAM on Google Colab](docs/ColabHighRAM.jpg)
 
@@ -53,5 +53,7 @@ The notebook is designed to be user-friendly and resilient:
 
 If your runtime is ever terminated unexpectedly and is unfinished, just reload the page and click **Run All** again. The notebook will automatically skip the completed steps and pick up where it left off. Once all the cells have finished, your two figures will appear in the output of the last cell!
 
+## Running Locally
 
+If you want to edit our code or run it locally, please follow the [Instructions for Running Locally](Instructions_for_Running_Locally.txt)
 
