@@ -19,4 +19,4 @@ Repository Structure:
 
 How to Run Our Code?
 
-One shortcut to reproduce the main paper figures (Figures 4-8): Please run the corresponding main/TEST_FUNCTION/figure.py. This will automatically run all the benchmark methods under the folder and create the plots.
+Shortcut to reproduce the main paper figures (Figures 4-8): please run the corresponding main/TEST_FUNCTION/figure.py. This will automatically run all the benchmark methods under the folder and create the plots. You can also run them individually and plot the figure manually using plot.ipynb.
