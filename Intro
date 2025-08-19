@@ -1,0 +1,41 @@
+This repository contains the source code to reproduce all figures and experiments presented in our paper. We acknowledge that although we have fixed the random seeds for all experiments, the results may be slightly different depending on your hardware.
+
+Prerequisites
+
+Hardware:
+All experiments were conducted on Google Colab with a High-RAM runtime.
+
+Set up local environment:
+To set up the environment for the experiments, run the following code in an Anaconda PowerShell prompt:
+
+conda create --name travelbo python=3.10
+conda activate travelbo
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 botorch==0.13.0 cycler==0.12.1 gpytorch==1.14 matplotlib==3.8.2 openpyxl==3.1.2 pandas==2.2.0 scipy==1.12.0 pyarrow==15.0.0
+
+Repository Structure:
+- `main/`: Contains the code and results for experiments in the main paper. Inside, subfolders are organized by test function (e.g., `main/Griewank/`).
+- `noiseless/`: Contains the code for experiments in the supplementary material (Figures 1-5). The file naming and structure are the same as in the `main` folder.
+- `.../Figures/`: This folder is where all generated plots will be stored.
+- `plot.ipynb`: Jupyter Notebook used to generate plots from experimental data.
+- `.../TEST_FUNCTION/METHOD.py`: Experiment of running algorithm `METHOD` on `TEST_FUNCTION`.
+- `requirements.txt`: A list of all Python package dependencies.
+
+How to Reproduce Our Results?
+
+** Shortcut to Reproduce Main Paper Figures (Figures 4-9): Please read the README.md file under this repository. 
+
+The process for reproducing custom figures is a two-step workflow:
+1. Run Experiment Scripts: For a specific experiment, navigate to the corresponding folder and execute the relevant Python (`.py`) scripts. Each benchmark method is implemented in a `.py` file within the test function's folder (e.g., `main/Griewank/TUCB.py`). Running a script produces two outputs: `METHOD_reg.xlsx` for regret data and `METHOD_travel.xlsx` for movement cost data.
+2. Generate Plots: Once the `.xlsx` files are generated, run the `plot.ipynb` Jupyter Notebook to process the `.xlsx` files and create the final plots (`.pdf`).
+
+Supplementary Material Figures
+
+Figures 1-5 (Noiseless Experiments):
+To reproduce these figures, switch to NOISE_SE = 0 for all the codes under `main/TEST_FUNCTION/`. 
+
+Figures 6-11 (TUCB with different batch size schedules):
+To reproduce these figures, navigate to the `main/TEST_FUNCTION/` folder and run the following scripts:
+python TUCB.py
+python TUCB15.py
+python TUCB2.py
+After running the scripts, use the `main/plot.ipynb` notebook to generate the final plots.
