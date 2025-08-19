@@ -50,8 +50,3 @@ The notebook is designed to be user-friendly and resilient:
 ### Troubleshooting
 
 If your runtime is ever terminated unexpectedly and is unfinished, just reload the page and click **Run All** again. The notebook will automatically skip the completed steps and pick up where it left off. Once all the cells have finished, your two figures will appear in the output of the last cell!
-
-## Running Locally
-
-If you want to edit our code or run it locally, please follow the [Instructions for Running Locally](Instructions_for_Running_Locally).
-
