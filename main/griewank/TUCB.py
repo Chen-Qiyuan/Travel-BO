@@ -310,7 +310,7 @@ class agent():
               )          
 
 if __name__ == "__main__":
-
+    torch.set_default_dtype(torch.float64)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     dtype = torch.double
@@ -365,4 +365,5 @@ if __name__ == "__main__":
 
     import pandas as pd
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
+
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
