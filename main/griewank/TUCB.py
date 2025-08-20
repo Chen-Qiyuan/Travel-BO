@@ -200,7 +200,7 @@ class agent():
         # observe the response of the current batch
         new_y = blackbox(unnormalize(self.next_samples, bounds))/Normalize_y
         regret = (blackbox.evaluate_true(unnormalize(self.next_samples, bounds)) - blackbox.evaluate_true(blackbox.optimizers[0]) ).abs()
-        self.regret_record += regret.cpu().tolist()
+        self.regret_record += regret.tolist()
         # augment training dataset
         self.local_X = torch.cat([self.local_X, self.next_samples])
         self.local_Y = torch.cat([self.local_Y, new_y])
@@ -224,9 +224,9 @@ class agent():
         
         destinations_real = unnormalize(destinations, bounds=bounds)
         distance_matrix = (destinations_real[:, None] - destinations_real[None, :]).norm(dim=-1)
-        xopt , travel_cost = christofides(distance_matrix.cpu().numpy())
+        xopt , travel_cost = christofides(distance_matrix.numpy())
         diffs = destinations_real[xopt[1:]]  - destinations_real[xopt[:-1]] 
-        self.travel_record += torch.norm(diffs, dim=1).cpu().tolist()
+        self.travel_record += torch.norm(diffs, dim=1).tolist()
         self.next_samples = destinations[xopt[1:]] 
 
     def plan_next_batch(self):
@@ -314,16 +314,15 @@ if __name__ == "__main__":
     torch.use_deterministic_algorithms(True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
-    dtype = torch.double
     warnings.filterwarnings('ignore', category = BadInitialCandidatesWarning)
     warnings.filterwarnings('ignore', category = RuntimeWarning)
     warnings.filterwarnings('ignore', category=InputDataWarning)
     
     # only affects the precision, decrease if out of memeory
-    NUM_RESTARTS = 100
-    RAW_SAMPLES = 5000
+    NUM_RESTARTS = 50
+    RAW_SAMPLES = 100
     BATCH_LIMIT = 5000
-    MAX_ITR = 50
+    MAX_ITR = 20
 
     # for GP
     Normalize_y = 1
@@ -368,5 +367,6 @@ if __name__ == "__main__":
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
 
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
 
 
