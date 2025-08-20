@@ -145,27 +145,22 @@ class ConstrainedUpperConfidenceBound(AnalyticAcquisitionFunction):
         feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)  
         return (mean + self.beta.sqrt() * sigma.squeeze()) + feasiblity * 10
 
-class ConstrainedLowerConfidenceBound(AnalyticAcquisitionFunction):
+class LowerConfidenceBound(AnalyticAcquisitionFunction):
 
     def __init__(
         self,
         model,
         beta,
-        model_hty,
-        LCB_hty,
         **kwargs,
     ) -> None:
 
         super().__init__(model=model, **kwargs)
-        self.model_hty = model_hty
-        self.LCB_hty = LCB_hty
         self.beta = torch.tensor(beta)
 
     @t_batch_mode_transform(expected_q=1)
     def forward(self, X: Tensor) -> Tensor:
         mean, sigma = compute_mean_and_sigma(self.model, X)
-        feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)
-        return (mean - self.beta.sqrt() * sigma) + feasiblity * 10
+        return (mean - self.beta.sqrt() * sigma) 
 
 
 class agent():
@@ -281,11 +276,9 @@ class agent():
 
     def get_search_region(self):
         feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
-        criteria = ConstrainedLowerConfidenceBound(            
+        criteria = LowerConfidenceBound(            
             self.model,
-            beta,
-            self.model_hty, 
-            self.LCB_hty,)
+            beta)
         
         candidates, value = optimize_acqf(
             acq_function=criteria,
@@ -367,6 +360,7 @@ if __name__ == "__main__":
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
 
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
 
 
 
