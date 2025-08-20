@@ -345,7 +345,7 @@ if __name__ == "__main__":
     cum_travel_table = []
     
     for rep in range(10):
-        seed = 200 + rep
+        seed = 203 + rep
         torch.manual_seed(seed)
         random.seed(seed)
         np.random.seed(seed)
@@ -365,4 +365,5 @@ if __name__ == "__main__":
     import pandas as pd
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
 
