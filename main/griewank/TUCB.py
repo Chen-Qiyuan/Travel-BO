@@ -319,10 +319,10 @@ if __name__ == "__main__":
     warnings.filterwarnings('ignore', category=InputDataWarning)
     
     # only affects the precision, decrease if out of memeory
-    NUM_RESTARTS = 50
-    RAW_SAMPLES = 100
+    NUM_RESTARTS = 100
+    RAW_SAMPLES = 1000
     BATCH_LIMIT = 5000
-    MAX_ITR = 20
+    MAX_ITR = 10
 
     # for GP
     Normalize_y = 1
@@ -367,6 +367,7 @@ if __name__ == "__main__":
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
 
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
 
 
 
