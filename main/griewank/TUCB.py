@@ -91,7 +91,7 @@ def compute_mean_and_sigma(model, X, compute_mean: bool = True, compute_sigma: b
 
     return mean, sigma
 
-def feasiblity_ind(X, model_hty, LCB_hty, scale = 1000, max_count = 1):
+def feasiblity_ind(X, model_hty, LCB_hty, scale = 1e8, max_count = 1):
     indicator = torch.ones(X.shape[0])
     n_constraints = min(max_count, len(model_hty)) # alleviate computation if needed
     for count in range(1,n_constraints+1):
@@ -145,22 +145,27 @@ class ConstrainedUpperConfidenceBound(AnalyticAcquisitionFunction):
         feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)  
         return (mean + self.beta.sqrt() * sigma.squeeze()) + feasiblity * 10
 
-class LowerConfidenceBound(AnalyticAcquisitionFunction):
+class ConstrainedLowerConfidenceBound(AnalyticAcquisitionFunction):
 
     def __init__(
         self,
         model,
         beta,
+        model_hty,
+        LCB_hty,
         **kwargs,
     ) -> None:
 
         super().__init__(model=model, **kwargs)
+        self.model_hty = model_hty
+        self.LCB_hty = LCB_hty
         self.beta = torch.tensor(beta)
 
     @t_batch_mode_transform(expected_q=1)
     def forward(self, X: Tensor) -> Tensor:
         mean, sigma = compute_mean_and_sigma(self.model, X)
-        return (mean - self.beta.sqrt() * sigma) 
+        feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)
+        return (mean - self.beta.sqrt() * sigma) + feasiblity * 10
 
 
 class agent():
@@ -258,13 +263,14 @@ class agent():
                 break
     
     def eval_BOD(self):
+        feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
         criteria = PosteriorMean(self.model,)
-        candidates, value = optimize_acqf(
+        candidate, value = optimize_acqf(
             acq_function = criteria,
             bounds = unit_bounds,
             q = 1,
             num_restarts = NUM_RESTARTS,
-            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
+            batch_initial_conditions = feas_points.unsqueeze(1),
             options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
@@ -274,17 +280,20 @@ class agent():
     
 
     def get_search_region(self):
-        criteria = LowerConfidenceBound(            
+        feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
+        criteria = ConstrainedLowerConfidenceBound(            
             self.model,
-            beta)
+            beta,
+            self.model_hty, 
+            self.LCB_hty,)
         
         candidates, value = optimize_acqf(
-            acq_function = criteria,
-            bounds = unit_bounds,
-            q = 1,
-            num_restarts = NUM_RESTARTS,
-            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
-            options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
+            acq_function=criteria,
+            bounds=unit_bounds,
+            q=1,
+            num_restarts=NUM_RESTARTS,
+            batch_initial_conditions = feas_points.unsqueeze(1),
+            options={"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
         mean, sigma = compute_mean_and_sigma(self.model, candidates)
@@ -305,13 +314,14 @@ if __name__ == "__main__":
     torch.use_deterministic_algorithms(True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
+    dtype = torch.double
     warnings.filterwarnings('ignore', category = BadInitialCandidatesWarning)
     warnings.filterwarnings('ignore', category = RuntimeWarning)
     warnings.filterwarnings('ignore', category=InputDataWarning)
     
     # only affects the precision, decrease if out of memeory
     NUM_RESTARTS = 100
-    RAW_SAMPLES = 1000
+    RAW_SAMPLES = 5000
     BATCH_LIMIT = 5000
     MAX_ITR = 10
 
@@ -356,11 +366,4 @@ if __name__ == "__main__":
 
     import pandas as pd
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
-
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
-
-
-
-
-
-
