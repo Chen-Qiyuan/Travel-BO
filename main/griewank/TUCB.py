@@ -92,7 +92,7 @@ def compute_mean_and_sigma(model, X, compute_mean: bool = True, compute_sigma: b
     return mean, sigma
 
 def feasiblity_ind(X, model_hty, LCB_hty, scale = 1000, max_count = 1):
-    indicator = torch.ones(X.shape[0]).to(device)
+    indicator = torch.ones(X.shape[0])
     n_constraints = min(max_count, len(model_hty)) # alleviate computation if needed
     for count in range(1,n_constraints+1):
         mean, sigma = compute_mean_and_sigma(model_hty[-count], X)
@@ -105,11 +105,11 @@ def feasiblity_ind(X, model_hty, LCB_hty, scale = 1000, max_count = 1):
 def get_feasible_points(N, model_hty, LCB_hty, bounds = None):
     if bounds == None:
         local_bounds = unit_bounds
-    X = torch.tensor([]).to(device)
+    X = torch.tensor([])
     for attemp in range(10):
         if X.shape[0] == N:
             break
-        Xraw = local_bounds[0] + (local_bounds[1] - local_bounds[0]) * torch.rand(10 * N, dim).to(device)
+        Xraw = local_bounds[0] + (local_bounds[1] - local_bounds[0]) * torch.rand(10 * N, dim)
         X_pos = Xraw[(feasiblity_ind(Xraw, model_hty, LCB_hty) > 0.5 )][:N]
         X = torch.cat([X, X_pos])
 
@@ -136,7 +136,7 @@ class ConstrainedUpperConfidenceBound(AnalyticAcquisitionFunction):
         self.beta = torch.tensor(beta)
         selected_X = torch.cat([ model.train_inputs[0] , selected_X ])
         self.temp_model = deepcopy(self.model)
-        self.temp_model.set_train_data( inputs = selected_X, targets = torch.zeros(selected_X.shape[0]).double().to(device), strict=False )
+        self.temp_model.set_train_data( inputs = selected_X, targets = torch.zeros(selected_X.shape[0]), strict=False )
 
     @t_batch_mode_transform(expected_q=1)
     def forward(self, X: Tensor) -> Tensor:
@@ -173,20 +173,20 @@ class agent():
     def __init__(self):
         self.model_hty = []
         self.LCB_hty = []
-        self.local_X = torch.tensor([]).double().to(device)
-        self.local_Y = torch.tensor([]).double().to(device)
+        self.local_X = torch.tensor([])
+        self.local_Y = torch.tensor([])
         self.regret_record = []
         self.travel_record = []
         self.current_batch_size = initial_batch_size
 
 
     def generate_initial_data(self, n = 1):
-        self.next_samples =  torch.rand(n,dim).double().to(device)
+        self.next_samples =  torch.rand(n,dim)
         new_y = blackbox(unnormalize(self.next_samples, bounds))/Normalize_y
         self.local_X = torch.cat([self.local_X, self.next_samples])
         self.local_Y = torch.cat([self.local_Y, new_y])
         regret = (blackbox.evaluate_true(unnormalize(self.next_samples, bounds)) - blackbox.evaluate_true(blackbox.optimizers[0]) ).abs().mean().item()
-        self.next_samples = torch.tensor([]).double().to(device) # clear the batch buffer
+        self.next_samples = torch.tensor([]) # clear the batch buffer
         self.update_model()
 
         print("\rSamples Taken: {} | avg regret: {:.2f}"
@@ -206,13 +206,13 @@ class agent():
         self.local_Y = torch.cat([self.local_Y, new_y])
         self.update_model() # update model
 
-        self.next_samples = torch.tensor([]).double().to(device) # clear the batch buffer
+        self.next_samples = torch.tensor([]) # clear the batch buffer
         self.previous_batch_size = self.current_batch_size
         self.current_batch_size = int(np.ceil(self.previous_batch_size * batch_size_multiplier)) # set next batch size
     
     def update_model(self):      
         targets = self.local_Y.unsqueeze(-1)
-        self.model = SingleTaskGP(self.local_X, targets).to(device)
+        self.model = SingleTaskGP(self.local_X, targets)
         self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model).to(self.local_X)
         fit_gpytorch_mll(self.mll)
     
@@ -220,7 +220,7 @@ class agent():
         if self.local_X.numel() > 0:
             destinations = torch.cat([self.local_X[-1,:].reshape(1,-1), self.next_samples])
         else:
-            destinations = torch.cat([ torch.zeros(1,dim).double().to(device), self.next_samples])
+            destinations = torch.cat([ torch.zeros(1,dim), self.next_samples])
         
         destinations_real = unnormalize(destinations, bounds=bounds)
         distance_matrix = (destinations_real[:, None] - destinations_real[None, :]).norm(dim=-1)
@@ -298,7 +298,7 @@ class agent():
 
         mean, sigma = compute_mean_and_sigma(self.model, candidates)
         self.model_hty.append(deepcopy(self.model))
-        self.LCB_hty.append((mean - torch.tensor(beta).sqrt().to(device)*sigma/2).item())
+        self.LCB_hty.append((mean - torch.tensor(beta).sqrt()*sigma/2).item())
 
     
     def report(self,):
@@ -329,11 +329,11 @@ if __name__ == "__main__":
     
     # Setting parameters
     NOISE_SE = 0.01
-    blackbox = Griewank(negate=True,noise_std = NOISE_SE).to(device)
+    blackbox = Griewank(negate=True,noise_std = NOISE_SE)
     dim = blackbox.dim
-    bounds = torch.tensor([[-20] * dim, [20] * dim]).double().to(device)
+    bounds = torch.tensor([[-20] * dim, [20] * dim])
 
-    unit_bounds = torch.tensor([[0] * dim, [1] * dim]).double().to(device)
+    unit_bounds = torch.tensor([[0] * dim, [1] * dim])
     initial_samples = 2 * dim # initial number of samples
     initial_batch_size = 1 # starting batch size for batched algorithm
     batch_size_multiplier = 1.1 # next batch size = multiplier * previous batch size 
@@ -367,3 +367,4 @@ if __name__ == "__main__":
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
 
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
