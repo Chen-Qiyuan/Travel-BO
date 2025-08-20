@@ -91,7 +91,7 @@ def compute_mean_and_sigma(model, X, compute_mean: bool = True, compute_sigma: b
 
     return mean, sigma
 
-def feasiblity_ind(X, model_hty, LCB_hty, scale = 1e8, max_count = 1):
+def feasiblity_ind(X, model_hty, LCB_hty, scale = 1e12, max_count = 1):
     indicator = torch.ones(X.shape[0])
     n_constraints = min(max_count, len(model_hty)) # alleviate computation if needed
     for count in range(1,n_constraints+1):
@@ -109,7 +109,7 @@ def get_feasible_points(N, model_hty, LCB_hty, bounds = None):
     for attemp in range(10):
         if X.shape[0] == N:
             break
-        Xraw = local_bounds[0] + (local_bounds[1] - local_bounds[0]) * torch.rand(10 * N, dim)
+        Xraw = local_bounds[0] + (local_bounds[1] - local_bounds[0]) * torch.rand(N, dim)
         X_pos = Xraw[(feasiblity_ind(Xraw, model_hty, LCB_hty) > 0.5 )][:N]
         X = torch.cat([X, X_pos])
 
@@ -164,10 +164,10 @@ class ConstrainedLowerConfidenceBound(AnalyticAcquisitionFunction):
     @t_batch_mode_transform(expected_q=1)
     def forward(self, X: Tensor) -> Tensor:
         mean, sigma = compute_mean_and_sigma(self.model, X)
-        feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)
-        return (mean - self.beta.sqrt() * sigma) + feasiblity * 10
+        return (mean - self.beta.sqrt() * sigma) 
 
 
+    
 class agent():
     
     def __init__(self):
@@ -233,7 +233,7 @@ class agent():
         self.get_search_region()
 
         for batch_index in range(int(self.current_batch_size)):
-            feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
+            feas_points = get_feasible_points(RAW_SAMPLES, self.model_hty, self.LCB_hty, bounds = None)
 
             acq_func = ConstrainedUpperConfidenceBound(
                 self.model,
@@ -263,14 +263,13 @@ class agent():
                 break
     
     def eval_BOD(self):
-        feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
-        criteria = PosteriorMean(self.model,)
+        criteria = PosteriorMean(self.model)
         candidate, value = optimize_acqf(
             acq_function = criteria,
             bounds = unit_bounds,
             q = 1,
             num_restarts = NUM_RESTARTS,
-            batch_initial_conditions = feas_points.unsqueeze(1),
+            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
             options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
@@ -280,7 +279,6 @@ class agent():
     
 
     def get_search_region(self):
-        feas_points = get_feasible_points(NUM_RESTARTS, self.model_hty, self.LCB_hty, bounds = None)
         criteria = ConstrainedLowerConfidenceBound(            
             self.model,
             beta,
@@ -288,12 +286,12 @@ class agent():
             self.LCB_hty,)
         
         candidates, value = optimize_acqf(
-            acq_function=criteria,
-            bounds=unit_bounds,
-            q=1,
-            num_restarts=NUM_RESTARTS,
-            batch_initial_conditions = feas_points.unsqueeze(1),
-            options={"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
+            acq_function = criteria,
+            bounds = unit_bounds,
+            q = 1,
+            num_restarts = NUM_RESTARTS,
+            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
+            options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
         mean, sigma = compute_mean_and_sigma(self.model, candidates)
@@ -321,8 +319,8 @@ if __name__ == "__main__":
     
     # only affects the precision, decrease if out of memeory
     NUM_RESTARTS = 100
-    RAW_SAMPLES = 5000
-    BATCH_LIMIT = 5000
+    RAW_SAMPLES = 1000
+    BATCH_LIMIT = 1000
     MAX_ITR = 10
 
     # for GP
@@ -332,9 +330,9 @@ if __name__ == "__main__":
     NOISE_SE = 0.01
     blackbox = Griewank(negate=True,noise_std = NOISE_SE)
     dim = blackbox.dim
-    bounds = torch.tensor([[-20] * dim, [20] * dim])
+    bounds = torch.tensor([[-20] * dim, [20] * dim]).double()
 
-    unit_bounds = torch.tensor([[0] * dim, [1] * dim])
+    unit_bounds = torch.tensor([[0] * dim, [1] * dim]).double()
     initial_samples = 2 * dim # initial number of samples
     initial_batch_size = 1 # starting batch size for batched algorithm
     batch_size_multiplier = 1.1 # next batch size = multiplier * previous batch size 
