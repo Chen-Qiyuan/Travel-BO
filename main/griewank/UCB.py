@@ -285,14 +285,13 @@ class agent():
                 break
     
     def eval_BOD(self):
-        feas_points = get_feasible_points(RAW_SAMPLES, self.model_hty, self.LCB_hty, bounds = None)
         criteria = PosteriorMean(self.model,self.model_hty, self.LCB_hty)
         candidate, value = optimize_acqf(
             acq_function = criteria,
             bounds = unit_bounds,
             q = 1,
             num_restarts = NUM_RESTARTS,
-            batch_initial_conditions = feas_points.unsqueeze(1),
+            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
             options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
@@ -302,7 +301,6 @@ class agent():
     
 
     def get_search_region(self):
-        feas_points = get_feasible_points(RAW_SAMPLES, self.model_hty, self.LCB_hty, bounds = None)
         criteria = ConstrainedLowerConfidenceBound(            
             self.model,
             beta,
@@ -310,12 +308,12 @@ class agent():
             self.LCB_hty,)
         
         candidates, value = optimize_acqf(
-            acq_function=criteria,
-            bounds=unit_bounds,
-            q=1,
-            num_restarts=NUM_RESTARTS,
-            batch_initial_conditions = feas_points.unsqueeze(1),
-            options={"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
+            acq_function = criteria,
+            bounds = unit_bounds,
+            q = 1,
+            num_restarts = NUM_RESTARTS,
+            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
+            options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
         )
 
         mean, sigma = compute_mean_and_sigma(self.model, candidates)
