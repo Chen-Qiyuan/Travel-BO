@@ -143,7 +143,7 @@ class ConstrainedUpperConfidenceBound(AnalyticAcquisitionFunction):
         mean, _ = compute_mean_and_sigma(self.model, X, compute_sigma = False)
         sigma = self.temp_model.posterior(X = X).variance.sqrt()
         feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)  
-        return (mean + self.beta.sqrt() * sigma.squeeze()) + feasiblity * 10
+        return (mean + self.beta.sqrt() * sigma.squeeze()) + feasiblity * 100
 
 class ConstrainedLowerConfidenceBound(AnalyticAcquisitionFunction):
 
@@ -365,3 +365,4 @@ if __name__ == "__main__":
     import pandas as pd
     pd.DataFrame(cum_regret_table).T.to_excel("TUCB_reg.xlsx", index=False, engine='openpyxl')
     pd.DataFrame(cum_travel_table).T.to_excel("TUCB_travel.xlsx", index=False, engine='openpyxl')
+
