@@ -91,7 +91,7 @@ def compute_mean_and_sigma(model, X, compute_mean: bool = True, compute_sigma: b
 
     return mean, sigma
 
-def feasiblity_ind(X, model_hty, LCB_hty, scale = 1000, max_count = 1):
+def feasiblity_ind(X, model_hty, LCB_hty, scale = 1e12, max_count = 1):
     indicator = torch.ones(X.shape[0])
     n_constraints = min(max_count, len(model_hty)) # alleviate computation if needed
     for count in range(1,n_constraints+1):
@@ -164,31 +164,9 @@ class ConstrainedLowerConfidenceBound(AnalyticAcquisitionFunction):
     @t_batch_mode_transform(expected_q=1)
     def forward(self, X: Tensor) -> Tensor:
         mean, sigma = compute_mean_and_sigma(self.model, X)
-        feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)
-        return (mean - self.beta.sqrt() * sigma) + feasiblity * 0
+        return (mean - self.beta.sqrt() * sigma) 
 
-class PosteriorMean(AnalyticAcquisitionFunction):
 
-    def __init__(
-        self,
-        model,
-        model_history,
-        LCB_history,
-        maximize = True,
-        **kwargs,
-    ) -> None:
-
-        super().__init__(model=model, **kwargs)
-        self.model_hty = model_history
-        self.LCB_hty = LCB_history
-        self.beta = torch.tensor(beta)
-        self.maximize = maximize
-
-    @t_batch_mode_transform(expected_q=1)
-    def forward(self, X: Tensor) -> Tensor:
-        mean, _ = compute_mean_and_sigma(self.model, X, compute_sigma = False)
-        feasiblity = feasiblity_ind(X, self.model_hty, self.LCB_hty)
-        return (mean if self.maximize else -mean) + feasiblity * 0
     
 class agent():
     
@@ -285,7 +263,7 @@ class agent():
                 break
     
     def eval_BOD(self):
-        criteria = PosteriorMean(self.model,self.model_hty, self.LCB_hty)
+        criteria = PosteriorMean(self.model)
         candidate, value = optimize_acqf(
             acq_function = criteria,
             bounds = unit_bounds,
