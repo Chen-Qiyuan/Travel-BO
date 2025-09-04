@@ -1,0 +1,176 @@
+import torch
+from botorch.test_functions import Levy
+from botorch.optim import optimize_acqf
+from botorch.acquisition import PosteriorMean
+from botorch.exceptions import BadInitialCandidatesWarning, InputDataWarning
+from botorch.models.gp_regression import SingleTaskGP
+from botorch.fit import fit_gpytorch_mll
+from botorch.utils.transforms import unnormalize
+from gpytorch.mlls import ExactMarginalLogLikelihood
+import random
+import pandas as pd
+import warnings
+import numpy as np
+import gpytorch
+
+class SparseGP(gpytorch.models.ApproximateGP):
+    def __init__(self, inducing_points):
+        pass
+
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
+class Power():
+    def __init__(self):
+        self.surrogate = torch.load('surrogate.pth', weights_only=False)
+        self.surrogate.eval()
+        self.NOISE_SE = self.surrogate.likelihood.noise_covar.noise.item() ** 1/2
+        self.dim = 4
+    
+    def evaluate_true(self, X):
+        return self.surrogate(X).mean.data
+    
+    def observe(self, X):
+        truth = self.evaluate_true(X)
+        return truth + torch.randn_like(truth) * self.NOISE_SE
+    
+class agent():
+    
+    def __init__(self):
+        self.local_X = torch.tensor([])
+        self.local_Y = torch.tensor([])
+        self.regret_record = []
+        self.travel_record = []
+
+    def generate_initial_data(self, n = 1):
+        self.next_samples =  torch.rand(n,dim)
+        new_y = blackbox.observe(self.next_samples)/Normalize_y
+        self.local_X = torch.cat([self.local_X, self.next_samples])
+        self.local_Y = torch.cat([self.local_Y, new_y])
+        
+
+        regret = (blackbox.evaluate_true(self.next_samples) - 2.29 ).abs().mean().item()
+        self.next_samples = torch.tensor([]) # clear the batch buffer
+
+        self.update_model() # update model
+
+        print("\rSamples Taken: {} | avg regret: {:.2f}"
+              .format(self.local_X.shape[0], regret)
+              )  
+
+
+    def go(self):
+        self.plan_route()
+        # observe the response of the current batch
+        new_y = blackbox.observe(self.next_samples)/Normalize_y
+        regret = (blackbox.evaluate_true(self.next_samples) - 2.29 ).abs()
+        self.regret_record += regret.cpu().tolist()
+        # augment training dataset
+        self.local_X = torch.cat([self.local_X, self.next_samples])
+        self.local_Y = torch.cat([self.local_Y, new_y])
+
+        self.update_model() # update model
+
+        self.next_samples = torch.tensor([]) # clear the batch buffer
+
+
+    def update_model(self):      
+        targets = self.local_Y.unsqueeze(-1)
+        self.model = SingleTaskGP(self.local_X, targets)
+        self.mll = ExactMarginalLogLikelihood(self.model.likelihood, self.model).to(self.local_X)
+        fit_gpytorch_mll(self.mll)
+    
+    def plan_route(self):
+        if self.local_X.numel() > 0:
+            destinations = torch.cat([self.local_X[-1,:].reshape(1,-1), self.next_samples])
+        else:
+            destinations = torch.cat([ torch.zeros(1,dim), self.next_samples])
+        
+        destinations_real = unnormalize(destinations, bounds=bounds)
+        distance_matrix = (destinations_real[:, None] - destinations_real[None, :]).norm(p=1,dim=-1)
+        diffs = destinations_real[1:]  - destinations_real[:-1] 
+        self.travel_record += diffs.norm(p=1,dim=-1).cpu().tolist()
+        self.next_samples = destinations[1:] 
+
+    def plan_next_batch(self):
+        self.next_samples = torch.rand(1,dim)
+   
+    def eval_BOD(self):
+        criteria = PosteriorMean(self.model,)
+        candidates, value = optimize_acqf(
+            acq_function = criteria,
+            bounds = unit_bounds,
+            q = 1,
+            num_restarts = NUM_RESTARTS,
+            raw_samples = RAW_SAMPLES,  # used for intialization heuristic
+            options = {"batch_limit": BATCH_LIMIT, "maxiter": MAX_ITR},
+        )
+
+        return (blackbox.evaluate_true(candidates) - 2.29 ).abs().item()
+    
+    
+    def report(self,):
+        report_len = len(self.regret_record)
+        current_avg_travel = sum(self.travel_record[-report_len:]) / report_len
+        current_avg_reg = sum(self.regret_record[-report_len:])  / report_len
+        print("\rSamples Taken: {} | avg travel cost: {:.2f} | avg regret: {:.2f} | BOD regret: {:.2f}"
+              .format(self.local_X.shape[0] - initial_samples, current_avg_travel, current_avg_reg, self.eval_BOD())
+              )       
+
+
+
+if __name__ == "__main__":
+    torch.set_default_dtype(torch.float64)
+    device = torch.device("cpu")
+    print(device)
+    warnings.filterwarnings('ignore', category = BadInitialCandidatesWarning)
+    warnings.filterwarnings('ignore', category = RuntimeWarning)
+    warnings.filterwarnings('ignore', category=InputDataWarning)
+    
+    # Numerical parameters (only affects the precision)
+    # for optimizing acquisition functions
+    NUM_RESTARTS = 100
+    RAW_SAMPLES = 1000
+    BATCH_LIMIT = 1000
+    MAX_ITR = 10
+    
+    # for GP
+    Normalize_y = 1
+    
+    # Setting parameters
+    blackbox = Power()
+    dim = blackbox.dim
+    bounds = torch.tensor([[1.81,25.36,992.89,25.56],
+                           [37.11,81.56,1033.30,100.16]])
+    unit_bounds = torch.tensor([[0.] * dim, [1.] * dim])
+    initial_samples = 2*dim
+
+    # Contorlling parameters (affects peformance)
+    beta = 4 #.sqrt()
+
+    T = 200
+    cum_regret_table = []
+    cum_travel_table = []
+
+    for rep in range(50):
+        seed = 0 + rep
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        traveler = agent()
+
+        traveler.generate_initial_data(n=initial_samples)
+
+        while traveler.local_X.shape[0] - initial_samples < T : 
+            traveler.plan_next_batch()
+            traveler.go()
+            traveler.report()
+
+        print()
+        cum_regret_table.append(traveler.regret_record)
+        cum_travel_table.append(traveler.travel_record)
+
+    pd.DataFrame(cum_regret_table).T.to_csv("RS_reg.csv", index=False)
+    pd.DataFrame(cum_travel_table).T.to_csv("RS_travel.csv", index=False)
